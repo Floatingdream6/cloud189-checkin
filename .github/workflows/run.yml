@@ -61,14 +61,32 @@ jobs:
         env:
           BARK_KEY: ${{ secrets.BARK_KEY }}
         run: |
+          echo "===== 检查日志文件 ====="
+          cat checkin_result.txt || echo "文件不存在"
+          
+          echo "===== 提取关键信息 ====="
           MSG=$(grep -E "个人签到任务|执行完毕|个人容量|家庭容量" checkin_result.txt | sed 's/\*\*\*\*[0-9]*: //g')
+          
+          # 如果没抓到，说明可能报错了，或者文件为空
           if [ -z "$MSG" ]; then
-            MSG="⚠️ 签到执行异常，请查看日志！\n\n$(tail -n 5 checkin_result.txt)"
+            MSG="⚠️ 签到执行异常或文件为空，请查看日志！"
           fi
-          curl -X POST "https://api.day.app/${BARK_KEY}/天翼云盘签到结果" \
-               -H "Content-Type: application/x-www-form-urlencoded" \
-               --data-urlencode "body=${MSG}" \
-               --data-urlencode "group=签到脚本"
+          
+          echo "提取到的内容为:"
+          echo -e "$MSG"
+          
+                    # 使用 jq 安全地构建 JSON 数据（完美处理双引号和换行）
+          JSON_PAYLOAD=$(jq -n \
+            --arg key "$BARK_KEY" \
+            --arg title "天翼云盘签到结果" \
+            --arg body "$MSG" \
+            --arg group "签到脚本" \
+            '{device_key: $key, title: $title, body: $body, group: $group}')
+          
+          echo "===== 发送 Bark 通知 ====="
+          curl -X POST "https://api.day.app/push" \
+               -H "Content-Type: application/json" \
+               -d "$JSON_PAYLOAD"
       
       - name: 🔑 Compute token hash
         if: always()
