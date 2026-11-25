@@ -54,8 +54,22 @@ jobs:
         with:
           timeout_minutes: 30
           max_attempts: 3
-          command: npm start
-
+          command: npm start | tee checkin_result.txt   # <--- 修改这一行
+               
+      - name: 📱 发送详细 Bark 通知
+        if: always()
+        env:
+          BARK_KEY: ${{ secrets.BARK_KEY }}
+        run: |
+          MSG=$(grep -E "个人签到任务|执行完毕|个人容量|家庭容量" checkin_result.txt | sed 's/\*\*\*\*[0-9]*: //g')
+          if [ -z "$MSG" ]; then
+            MSG="⚠️ 签到执行异常，请查看日志！\n\n$(tail -n 5 checkin_result.txt)"
+          fi
+          curl -X POST "https://api.day.app/${BARK_KEY}/天翼云盘签到结果" \
+               -H "Content-Type: application/x-www-form-urlencoded" \
+               --data-urlencode "body=${MSG}" \
+               --data-urlencode "group=签到脚本"
+      
       - name: 🔑 Compute token hash
         if: always()
         run: |
