@@ -82,6 +82,7 @@ jobs:
           
           echo "===== 发送 ShowDoc 通知 ====="
           # 注意看这里的参数，把 desp 改成了 content，而且直接请求你的专属 URL
+          echo "当前获取的 URL 是: [${PUSH_URL}]"  # <--- 加上方括号，方便看前后有没有空格
           curl -s -X POST "${PUSH_URL}" \
                -d "title=天翼云盘签到结果" \
                --data-urlencode "content=${MSG}"
