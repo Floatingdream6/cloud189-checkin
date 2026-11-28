@@ -7,7 +7,7 @@ on:
     types: started
   workflow_dispatch:
   schedule:
-    - cron: 0 1 * * *
+    - cron: 0 23 * * *
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -51,6 +51,8 @@ jobs:
 
       - name: 🚀 Run
         uses: nick-fields/retry@master
+        env:
+          TZ: Asia/Shanghai    # <--- 加上这一行，让 Node 脚本按北京时间打印日志
         with:
           timeout_minutes: 30
           max_attempts: 3
