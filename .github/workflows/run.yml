@@ -63,7 +63,7 @@ jobs:
         env:
           SENDKEY: ${{ secrets.SENDKEY }}
         run: |
-          # 1. 提取日志
+          # 1. 提取正文日志
           MSG=$(grep -E "个人签到任务|执行完毕|个人容量|家庭容量" checkin_result.txt | \
                 sed 's/\*\*\*\*[0-9]*: //g' | \
                 sed 's/\[INFO\] //g' | \
@@ -74,13 +74,26 @@ jobs:
             MSG="⚠️ 签到执行异常，请查看日志！"
           fi
           
-          echo "===== 发送 Server酱 通知 ====="
-          # 3. 强制传 desp 参数（这是 Server酱 的正文参数）
-          curl -s -X POST "https://sctapi.ftqq.com/${SENDKEY}.send" \
-               -d "title=天翼云盘签到结果" \
-               --data-urlencode "desp=${MSG}"
+          # 3. 动态生成 Title (核心修改)
+          if grep -q "获得" checkin_result.txt; then
+              # 如果日志里有“获得”字眼，提取出“获得 XX 空间”
+              SPACE_INFO=$(grep "获得" checkin_result.txt | sed -E 's/.*个人签到任务: (.*)/\1/')
+              TITLE="☁️ 签到成功！${SPACE_INFO}"
+          elif grep -q "今日已签到" checkin_result.txt; then
+              # 如果日志显示今天已经跑过了
+              TITLE="☁️ 天翼云盘今日已签到"
+          else
+              # 其他异常情况
+              TITLE="⚠️ 天翼云盘签到异常"
+          fi
           
-          echo "推送发送完毕！"
+          echo "===== 发送 Server酱 通知 ====="
+          echo "生成的标题为: $TITLE"
+          
+          # 4. 发送请求（这里把 -d "title=..." 改成了动态变量）
+          curl -s -X POST "https://sctapi.ftqq.com/${SENDKEY}.send" \
+               -d "title=${TITLE}" \
+               --data-urlencode "desp=${MSG}"
       
       - name: 🔑 Compute token hash
         if: always()
