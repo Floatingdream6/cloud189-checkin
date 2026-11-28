@@ -62,7 +62,7 @@ jobs:
         if: always()
         env:
           # 这里改成你刚才配置的包含整串 URL 的 Secret 名字
-          PUSH_URL: ${{ secrets.SHOWDOC_URL }} 
+          PUSH_URL: ${{ secrets.SHOWDOC_KEY }} 
         run: |
           echo "===== 检查日志文件 ====="
           cat checkin_result.txt || echo "文件不存在"
