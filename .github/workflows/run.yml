@@ -62,7 +62,7 @@ jobs:
         if: always()
         env:
           # 这里改成你刚才配置的包含整串 URL 的 Secret 名字
-          PUSH_URL: ${{ secrets.SHOWDOC_KEY }} 
+          PUSH_URL: ${{ secrets.SHOWDOC_URL }} 
         run: |
           echo "===== 检查日志文件 ====="
           cat checkin_result.txt || echo "文件不存在"
@@ -82,7 +82,6 @@ jobs:
           
           echo "===== 发送 ShowDoc 通知 ====="
           # 注意看这里的参数，把 desp 改成了 content，而且直接请求你的专属 URL
-          echo "当前获取的 URL 是: [${PUSH_URL}]"  # <--- 加上方括号，方便看前后有没有空格
           curl -s -X POST "${PUSH_URL}" \
                -d "title=天翼云盘签到结果" \
                --data-urlencode "content=${MSG}"
