@@ -58,10 +58,10 @@ jobs:
           max_attempts: 3
           command: npm start | tee checkin_result.txt   # <--- 修改这一行
                
-      - name: 📱 发送详细企业微信通知
+      - name: 📱 发送详细 ShowDoc 通知
         if: always()
         env:
-          WECOM_WEBHOOK: ${{ secrets.WECOM_WEBHOOK }}
+          SHOWDOC_KEY: ${{ secrets.SHOWDOC_KEY }}
         run: |
           echo "===== 检查日志文件 ====="
           cat checkin_result.txt || echo "文件不存在"
@@ -76,16 +76,13 @@ jobs:
             MSG="⚠️ 签到执行异常，请查看日志！\n\n$(tail -n 5 checkin_result.txt)"
           fi
 
-          echo "提取到的内容为:"
-          echo -e "$MSG"
-
-          echo "===== 发送企业微信通知 ====="
-          # 使用 jq 工具安全构建 JSON，防止特殊字符导致发送失败
+          echo "===== 发送 ShowDoc 通知 ====="
           JSON_PAYLOAD=$(jq -n \
-            --arg content "**天翼云盘签到结果**\n\n${MSG}" \
-            '{msgtype: "markdown", markdown: {content: $content}}')
+            --arg title "天翼云盘签到结果" \
+            --arg content "$MSG" \
+            '{title: $title, content: $content}')
 
-          curl -s -X POST "${WECOM_WEBHOOK}" \
+          curl -s -X POST "https://push.showdoc.com.cn/server/api/push/${SHOWDOC_KEY}" \
                -H "Content-Type: application/json" \
                -d "$JSON_PAYLOAD"
       
