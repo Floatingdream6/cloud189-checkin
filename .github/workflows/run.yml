@@ -61,30 +61,30 @@ jobs:
       - name: 📱 发送详细 ShowDoc 通知
         if: always()
         env:
-          SHOWDOC_KEY: ${{ secrets.SHOWDOC_KEY }}
+          # 这里改成你刚才配置的包含整串 URL 的 Secret 名字
+          PUSH_URL: ${{ secrets.SHOWDOC_URL }} 
         run: |
           echo "===== 检查日志文件 ====="
           cat checkin_result.txt || echo "文件不存在"
-
+          
           echo "===== 提取关键信息 ====="
           MSG=$(grep -E "个人签到任务|执行完毕|个人容量|家庭容量" checkin_result.txt | \
                 sed 's/\*\*\*\*[0-9]*: //g' | \
                 sed 's/\[INFO\] //g' | \
                 sed -E 's/\[([0-9]{4}-[0-9]{2}-[0-9]{2})T([0-9]{2}:[0-9]{2}:[0-9]{2})\.[0-9]{3}\]/[\1 \2]/g')
-
+          
           if [ -z "$MSG" ]; then
             MSG="⚠️ 签到执行异常，请查看日志！\n\n$(tail -n 5 checkin_result.txt)"
           fi
-
+          
+          echo "提取到的内容为:"
+          echo -e "$MSG"
+          
           echo "===== 发送 ShowDoc 通知 ====="
-          JSON_PAYLOAD=$(jq -n \
-            --arg title "天翼云盘签到结果" \
-            --arg content "$MSG" \
-            '{title: $title, content: $content}')
-
-          curl -s -X POST "https://push.showdoc.com.cn/server/api/push/${SHOWDOC_KEY}" \
-               -H "Content-Type: application/json" \
-               -d "$JSON_PAYLOAD"
+          # 注意看这里的参数，把 desp 改成了 content，而且直接请求你的专属 URL
+          curl -s -X POST "${PUSH_URL}" \
+               -d "title=天翼云盘签到结果" \
+               --data-urlencode "content=${MSG}"
       
       - name: 🔑 Compute token hash
         if: always()
